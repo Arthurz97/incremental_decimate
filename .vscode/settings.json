@@ -1,0 +1,11 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingModuleSource": "none",
+        "reportInvalidTypeForm": "none"
+    },
+    "files.exclude": {
+        "**/dev": true,
+        "**/__pycache__": true
+    }
+}

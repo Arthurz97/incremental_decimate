@@ -1,0 +1,12 @@
+schema_version = "1.0.0"
+id = "incremental_decimate"
+version = "1.0.0"
+name = "Incremental Decimate"
+tagline = "Dizimação incremental precisa baseada em alvo exato de triângulos"
+maintainer = "Your Name"
+type = "add-on"
+tags = ["Mesh", "Modeling"]
+blender_version_min = "4.2.0"
+license = [
+  "SPDX:GPL-3.0-or-later",
+]
