@@ -243,49 +243,59 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
             )
             return
 
-        col = layout.column(align=True)
-        col.use_property_split = True
-        col.use_property_decorate = False
+        # Decimate section — mirrors the native Decimate modifier panel
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
-        col.prop(props, "target_triangles", text="Target Triangles")
-        col.prop(props, "use_triangulate", text="Triangulate")
+        layout.prop(props, "target_triangles", text="Target Triangles")
 
-        # Symmetry and axes
-        row_sym = col.row(align=True)
-        row_sym.prop(props, "use_symmetry", text="Symmetry")
+        # Symmetry: heading in the split label column, checkbox + axes inline
+        row_sym = layout.row(align=True, heading="Symmetry")
+        row_sym.use_property_decorate = False
         sub = row_sym.row(align=True)
+        sub.prop(props, "use_symmetry", text="")
+        sub = sub.row(align=True)
         sub.enabled = props.use_symmetry
         sub.prop(props, "symmetry_axis", expand=True)
 
-        # Vertex Group
-        col.prop_search(
-            props, "vertex_group", obj, "vertex_groups", text="Vertex Group"
+        layout.prop(props, "use_triangulate", text="Triangulate")
+
+        # Vertex Group: search field + invert button on the same row,
+        # Factor below (disabled when no group), like the native modifier
+        row_vg = layout.row(align=True)
+        row_vg.prop_search(
+            props,
+            "vertex_group",
+            obj,
+            "vertex_groups",
+            text="Vertex Group",
+            icon="GROUP_VERTEX",
         )
-        if props.vertex_group:
-            row_vg = col.row(align=True)
-            row_vg.prop(
-                props, "invert_vertex_group", text="", icon="ARROW_LEFTRIGHT"
-            )
-            row_vg.prop(props, "vertex_group_factor", text="Factor")
+        sub_vg = row_vg.row(align=True)
+        sub_vg.enabled = bool(props.vertex_group)
+        sub_vg.use_property_decorate = False
+        sub_vg.prop(
+            props, "invert_vertex_group", text="", icon="ARROW_LEFTRIGHT"
+        )
+
+        row_factor = layout.row(align=True)
+        row_factor.enabled = bool(props.vertex_group)
+        row_factor.prop(props, "vertex_group_factor", text="Factor")
 
         layout.separator()
 
-        # Increment settings
+        # Increment settings (add-on specific, kept in its own box)
         box_inc = layout.box()
+        box_inc.use_property_split = True
+        box_inc.use_property_decorate = False
         box_inc.label(text="Increment Settings", icon="MOD_DECIM")
 
-        col_inc = box_inc.column(align=True)
-        col_inc.use_property_split = True
-        col_inc.use_property_decorate = False
-
-        col_inc.prop(props, "mode", text="Mode")
-
+        box_inc.prop(props, "mode", text="Mode")
         if props.mode == "FIXED_RATIO":
-            col_inc.prop(props, "step_ratio", text="Step Ratio")
+            box_inc.prop(props, "step_ratio", text="Step Ratio")
         else:
-            col_inc.prop(props, "step_count", text="Step Count")
-
-        col_inc.prop(props, "stack_before_apply", text="Stack in Batch")
+            box_inc.prop(props, "step_count", text="Step Count")
+        box_inc.prop(props, "stack_before_apply", text="Stack in Batch")
 
         layout.separator()
 
