@@ -40,42 +40,42 @@ class IncrementalDecimateProperties(PropertyGroup):
 
     use_triangulate: BoolProperty(
         name="Triangulate",
-        description="Ensures the mesh is triangulated during decimation",
+        description="Keep triangulated faces resulting from decimation",
         default=True,
     )
 
     use_symmetry: BoolProperty(
         name="Symmetry",
-        description="Maintains symmetry along the specified axis",
+        description="Maintain symmetry on an axis",
         default=False,
     )
 
     symmetry_axis: EnumProperty(
         name="Symmetry Axis",
-        description="Axis along which to keep symmetry",
+        description="Axis of symmetry",
         items=[
-            ("X", "X", "X Axis"),
-            ("Y", "Y", "Y Axis"),
-            ("Z", "Z", "Z Axis"),
+            ("X", "X", ""),
+            ("Y", "Y", ""),
+            ("Z", "Z", ""),
         ],
         default="X",
     )
 
     vertex_group: StringProperty(
         name="Vertex Group",
-        description="Vertex group used to influence the decimation",
+        description="Vertex group name",
         default="",
     )
 
     invert_vertex_group: BoolProperty(
         name="Invert Group",
-        description="Inverts the vertex group weights",
+        description="Invert vertex group influence",
         default=False,
     )
 
     vertex_group_factor: FloatProperty(
         name="Factor",
-        description="Vertex group weight factor",
+        description="Vertex group strength",
         default=1.0,
         min=0.0,
         max=1000.0,
