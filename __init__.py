@@ -18,6 +18,18 @@ def get_mesh_triangle_count(obj):
     return len(mesh.loop_triangles)
 
 
+_STEP_RATIO_MIN = 0.01
+_STEP_RATIO_MAX = 0.9999
+
+
+def _get_step_ratio(self):
+    return self.step_ratio_internal
+
+
+def _set_step_ratio(self, value):
+    self.step_ratio_internal = min(max(value, _STEP_RATIO_MIN), _STEP_RATIO_MAX)
+
+
 class IncrementalDecimateProperties(PropertyGroup):
     target_triangles: IntProperty(
         name="Target Triangles",
@@ -91,14 +103,29 @@ class IncrementalDecimateProperties(PropertyGroup):
         default="FIXED_RATIO",
     )
 
-    step_ratio: FloatProperty(
-        name="Step Ratio",
-        description="Ratio used on each pass up to the final adjusted one",
+    step_ratio_internal: FloatProperty(
+        name="Step Ratio (Internal)",
+        description="Internal storage for the step ratio, kept within safe limits",
         default=0.9000,
         min=0.0100,
         max=0.9999,
         precision=4,
+        options={"HIDDEN"},
+    )
+
+    step_ratio: FloatProperty(
+        name="Step Ratio",
+        description="Ratio used on each pass up to the final adjusted one",
+        default=0.9000,
+        min=0.0,
+        max=1.0,
+        soft_min=0.0,
+        soft_max=1.0,
+        precision=4,
         step=1,
+        subtype="FACTOR",
+        get=_get_step_ratio,
+        set=_set_step_ratio,
     )
 
     step_count: IntProperty(
@@ -292,7 +319,7 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
 
         box_inc.prop(props, "mode", text="Mode")
         if props.mode == "FIXED_RATIO":
-            box_inc.prop(props, "step_ratio", text="Step Ratio")
+            box_inc.prop(props, "step_ratio", text="Step Ratio", slider=True)
         else:
             box_inc.prop(props, "step_count", text="Step Count")
         box_inc.prop(props, "stack_before_apply", text="Stack in Batch")
@@ -316,15 +343,30 @@ classes = (
 )
 
 
+@bpy.app.handlers.persistent
+def _migrate_legacy_step_ratio(*_args):
+    """Move a pre-callback step_ratio value into the backing property."""
+    for scene in bpy.data.scenes:
+        props = scene.incremental_decimate_props
+        legacy_value = props.get("step_ratio")
+        if isinstance(legacy_value, float):
+            props.step_ratio = legacy_value
+            del props["step_ratio"]
+
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.Scene.incremental_decimate_props = PointerProperty(
         type=IncrementalDecimateProperties
     )
+    _migrate_legacy_step_ratio()
+    bpy.app.handlers.load_post.append(_migrate_legacy_step_ratio)
 
 
 def unregister():
+    if _migrate_legacy_step_ratio in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(_migrate_legacy_step_ratio)
     del bpy.types.Scene.incremental_decimate_props
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
