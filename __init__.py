@@ -12,7 +12,7 @@ from bpy.types import Operator, Panel, PropertyGroup
 
 
 def get_mesh_triangle_count(obj):
-    """Calcula a contagem real de triângulos da malha ativa."""
+    """Calculate the actual triangle count of the active mesh."""
     mesh = obj.data
     mesh.calc_loop_triangles()
     return len(mesh.loop_triangles)
@@ -21,49 +21,49 @@ def get_mesh_triangle_count(obj):
 class IncrementalDecimateProperties(PropertyGroup):
     target_triangles: IntProperty(
         name="Target Triangles",
-        description="Contagem final de triângulos desejada",
+        description="Desired final triangle count",
         default=1000,
         min=1,
     )
 
     use_triangulate: BoolProperty(
         name="Triangulate",
-        description="Garante a triangulação da malha durante a dizimação",
+        description="Ensures the mesh is triangulated during decimation",
         default=True,
     )
 
     use_symmetry: BoolProperty(
         name="Symmetry",
-        description="Mantém a simetria ao longo do eixo especificado",
+        description="Maintains symmetry along the specified axis",
         default=False,
     )
 
     symmetry_axis: EnumProperty(
-        name="Eixo de Simetria",
-        description="Eixo para manter a simetria",
+        name="Symmetry Axis",
+        description="Axis along which to keep symmetry",
         items=[
-            ("X", "X", "Eixo X"),
-            ("Y", "Y", "Eixo Y"),
-            ("Z", "Z", "Eixo Z"),
+            ("X", "X", "X Axis"),
+            ("Y", "Y", "Y Axis"),
+            ("Z", "Z", "Z Axis"),
         ],
         default="X",
     )
 
     vertex_group: StringProperty(
         name="Vertex Group",
-        description="Grupo de vértices para influenciar a dizimação",
+        description="Vertex group used to influence the decimation",
         default="",
     )
 
     invert_vertex_group: BoolProperty(
-        name="Inverter Grupo",
-        description="Inverte os pesos do grupo de vértices",
+        name="Invert Group",
+        description="Inverts the vertex group weights",
         default=False,
     )
 
     vertex_group_factor: FloatProperty(
-        name="Fator",
-        description="Fator de peso do grupo de vértices",
+        name="Factor",
+        description="Vertex group weight factor",
         default=1.0,
         min=0.0,
         max=1.0,
@@ -71,26 +71,26 @@ class IncrementalDecimateProperties(PropertyGroup):
     )
 
     mode: EnumProperty(
-        name="Modo de Incrementação",
-        description="Escolha a estratégia de cálculo das passadas",
+        name="Increment Mode",
+        description="Choose the strategy for computing the passes",
         items=[
             (
                 "FIXED_RATIO",
-                "Ratio Fixo",
-                "Define o ratio por passo e calcula a quantidade de passadas",
+                "Fixed Ratio",
+                "Set the ratio per step and compute the number of passes",
             ),
             (
                 "FIXED_STEPS",
-                "Número de Passos",
-                "Define o total de passadas e calcula o ratio por passo",
+                "Number of Steps",
+                "Set the total number of passes and compute the ratio per step",
             ),
         ],
         default="FIXED_RATIO",
     )
 
     step_ratio: FloatProperty(
-        name="Ratio do Passo",
-        description="Ratio utilizado em cada passada até a última ajustada",
+        name="Step Ratio",
+        description="Ratio used on each pass up to the final adjusted one",
         default=0.9000,
         min=0.0100,
         max=0.9999,
@@ -99,18 +99,18 @@ class IncrementalDecimateProperties(PropertyGroup):
     )
 
     step_count: IntProperty(
-        name="Número de Passos",
-        description="Quantidade total de passadas de dizimação",
+        name="Step Count",
+        description="Total number of decimation passes",
         default=10,
         min=1,
         max=500,
     )
 
     stack_before_apply: BoolProperty(
-        name="Empilhar Modificadores",
+        name="Stack Modifiers",
         description=(
-            "Se marcado, adiciona todas as passadas intermediárias na pilha antes de"
-            " aplicar. Se desmarcado, aplica 1 a 1."
+            "If enabled, adds all intermediate passes to the stack before applying"
+            " them. If disabled, applies them one at a time."
         ),
         default=True,
     )
@@ -118,10 +118,10 @@ class IncrementalDecimateProperties(PropertyGroup):
 
 class OBJECT_OT_incremental_decimate_apply(Operator):
     bl_idname = "object.incremental_decimate_apply"
-    bl_label = "Aplicar Dizimação Incremental"
+    bl_label = "Apply Incremental Decimate"
     bl_description = (
-        "Calcula e aplica modificadores Decimate de forma incremental até atingir o"
-        " alvo exato"
+        "Computes and applies Decimate modifiers incrementally until the exact"
+        " target is reached"
     )
     bl_options = {"REGISTER", "UNDO"}
 
@@ -133,22 +133,22 @@ class OBJECT_OT_incremental_decimate_apply(Operator):
         obj = context.active_object
         props = context.scene.incremental_decimate_props
 
-        # 1. Garante Object Mode e permanece nele
+        # 1. Ensure Object Mode and stay in it
         if obj.mode != "OBJECT":
             bpy.ops.object.mode_set(mode="OBJECT")
 
         t_0 = get_mesh_triangle_count(obj)
         t_target = props.target_triangles
 
-        # Validação de Alvo
+        # Target validation
         if t_target >= t_0:
             self.report(
                 {"WARNING"},
-                f"Target de triângulos ({t_target:,}) é maior ou igual ao número atual ({t_0:,}).",
+                f"The target triangle count ({t_target:,}) is greater than or equal to the current count ({t_0:,}).",
             )
             return {"CANCELLED"}
 
-        # 2. Cálculo do número de passadas intermediárias e do ratio base
+        # 2. Compute the number of intermediate passes and the base ratio
         if props.mode == "FIXED_RATIO":
             r_step = props.step_ratio
             ratio_total = t_target / t_0
@@ -164,7 +164,7 @@ class OBJECT_OT_incremental_decimate_apply(Operator):
                 r_step = (t_target / t_0) ** (1.0 / n)
 
         def setup_modifier_props(mod, ratio_val):
-            """Configura as propriedades do modificador Decimate em modo Collapse."""
+            """Set up the Decimate modifier properties in Collapse mode."""
             mod.decimate_type = "COLLAPSE"
             mod.ratio = max(min(ratio_val, 1.0), 0.0001)
             mod.use_collapse_triangulate = props.use_triangulate
@@ -175,10 +175,10 @@ class OBJECT_OT_incremental_decimate_apply(Operator):
                 mod.invert_vertex_group = props.invert_vertex_group
                 mod.vertex_group_factor = props.vertex_group_factor
 
-        # 3. Execução das passadas intermediárias
+        # 3. Run the intermediate passes
         if num_intermediate_passes > 0:
             if props.stack_before_apply:
-                # Caso A: Empilhar em lote e aplicar todos de uma vez
+                # Case A: Stack in batch and apply all at once
                 mod_names = []
                 for i in range(num_intermediate_passes):
                     mod = obj.modifiers.new(
@@ -190,7 +190,7 @@ class OBJECT_OT_incremental_decimate_apply(Operator):
                 for m_name in mod_names:
                     bpy.ops.object.modifier_apply(modifier=m_name)
             else:
-                # Caso B: Aplicar 1 a 1 sequencialmente
+                # Case B: Apply one by one sequentially
                 for i in range(num_intermediate_passes):
                     mod = obj.modifiers.new(
                         name=f"IncDecimate_Pass_{i+1}", type="DECIMATE"
@@ -198,11 +198,11 @@ class OBJECT_OT_incremental_decimate_apply(Operator):
                     setup_modifier_props(mod, r_step)
                     bpy.ops.object.modifier_apply(modifier=mod.name)
 
-        # 4. Medição real e cálculo do ratio para a última passada
-        t_atual = get_mesh_triangle_count(obj)
+        # 4. Real measurement and final pass ratio computation
+        t_current = get_mesh_triangle_count(obj)
 
-        if t_atual > t_target:
-            r_final = t_target / t_atual
+        if t_current > t_target:
+            r_final = t_target / t_current
             final_mod = obj.modifiers.new(name="IncDecimate_Final", type="DECIMATE")
             setup_modifier_props(final_mod, r_final)
             bpy.ops.object.modifier_apply(modifier=final_mod.name)
@@ -210,7 +210,7 @@ class OBJECT_OT_incremental_decimate_apply(Operator):
         t_final = get_mesh_triangle_count(obj)
         self.report(
             {"INFO"},
-            f"Dizimação concluída: {t_0:,} → {t_final:,} triângulos (Target: {t_target:,}).",
+            f"Decimation complete: {t_0:,} → {t_final:,} triangles (Target: {t_target:,}).",
         )
         return {"FINISHED"}
 
@@ -227,16 +227,16 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
         obj = context.active_object
         props = context.scene.incremental_decimate_props
 
-        # Painel Informativo da Malha
+        # Mesh info panel
         box_info = layout.box()
         if obj and obj.type == "MESH":
             t_current = get_mesh_triangle_count(obj)
             box_info.label(
-                text=f"Triângulos Atuais: {t_current:,}", icon="MESH_DATA"
+                text=f"Current Triangles: {t_current:,}", icon="MESH_DATA"
             )
         else:
             box_info.label(
-                text="Selecione um objeto do tipo Malha (Mesh)", icon="INFO"
+                text="Select a Mesh object", icon="INFO"
             )
             return
 
@@ -247,7 +247,7 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
         col.prop(props, "target_triangles", text="Target Triangles")
         col.prop(props, "use_triangulate", text="Triangulate")
 
-        # Simetria e Eixos
+        # Symmetry and axes
         row_sym = col.row(align=True)
         row_sym.prop(props, "use_symmetry", text="Symmetry")
         sub = row_sym.row(align=True)
@@ -267,7 +267,7 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
 
         layout.separator()
 
-        # Configurações do Incremento
+        # Increment settings
         box_inc = layout.box()
         box_inc.label(text="Increment Settings", icon="MOD_DECIM")
 
@@ -282,16 +282,16 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
         else:
             col_inc.prop(props, "step_count", text="Step Count")
 
-        col_inc.prop(props, "stack_before_apply", text="Empilhar em Lote")
+        col_inc.prop(props, "stack_before_apply", text="Stack in Batch")
 
         layout.separator()
 
-        # Botão de Execução
+        # Execute button
         btn_col = layout.column()
         btn_col.scale_y = 1.4
         btn_col.operator(
             "object.incremental_decimate_apply",
-            text="Aplicar Dizimação",
+            text="Apply Decimate",
             icon="PLAY",
         )
 
