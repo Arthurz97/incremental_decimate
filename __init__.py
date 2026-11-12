@@ -66,8 +66,11 @@ class IncrementalDecimateProperties(PropertyGroup):
         description="Vertex group weight factor",
         default=1.0,
         min=0.0,
-        max=1.0,
+        max=1000.0,
+        soft_min=0.0,
+        soft_max=10.0,
         precision=4,
+        subtype="FACTOR",
     )
 
     mode: EnumProperty(
