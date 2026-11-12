@@ -34,7 +34,7 @@ class IncrementalDecimateProperties(PropertyGroup):
     target_triangles: IntProperty(
         name="Target Triangles",
         description="Desired final triangle count",
-        default=1000,
+        default=25000,
         min=1,
     )
 
@@ -100,7 +100,7 @@ class IncrementalDecimateProperties(PropertyGroup):
                 "Set the total number of passes and compute the ratio per step",
             ),
         ],
-        default="FIXED_RATIO",
+        default="FIXED_STEPS",
     )
 
     step_ratio_internal: FloatProperty(
@@ -131,7 +131,7 @@ class IncrementalDecimateProperties(PropertyGroup):
     step_count: IntProperty(
         name="Step Count",
         description="Total number of decimation passes",
-        default=10,
+        default=4,
         min=1,
         max=500,
     )
