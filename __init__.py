@@ -256,19 +256,14 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
         layout = self.layout
         obj = context.active_object
         props = context.scene.incremental_decimate_props
+        is_mesh = obj is not None and obj.type == "MESH"
 
-        # Mesh info panel
+        # Mesh info panel (always visible; 0 when no mesh is active)
         box_info = layout.box()
-        if obj and obj.type == "MESH":
-            t_current = get_mesh_triangle_count(obj)
-            box_info.label(
-                text=f"Current Triangles: {t_current:,}", icon="MESH_DATA"
-            )
-        else:
-            box_info.label(
-                text="Select a Mesh object", icon="INFO"
-            )
-            return
+        t_current = get_mesh_triangle_count(obj) if is_mesh else 0
+        box_info.label(
+            text=f"Current Triangles: {t_current:,}", icon="MESH_DATA"
+        )
 
         # Decimate section — mirrors the native Decimate modifier panel
         layout.use_property_split = True
@@ -288,16 +283,24 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
         layout.prop(props, "use_triangulate", text="Triangulate")
 
         # Vertex Group: search field + invert button on the same row,
-        # Factor below (disabled when no group), like the native modifier
+        # Factor below (disabled when no group), like the native modifier.
+        # prop_search needs a real mesh; without one, draw a disabled field.
         row_vg = layout.row(align=True)
-        row_vg.prop_search(
-            props,
-            "vertex_group",
-            obj,
-            "vertex_groups",
-            text="Vertex Group",
-            icon="GROUP_VERTEX",
-        )
+        row_vg.enabled = is_mesh
+        if is_mesh:
+            row_vg.prop_search(
+                props,
+                "vertex_group",
+                obj,
+                "vertex_groups",
+                text="Vertex Group",
+                icon="GROUP_VERTEX",
+            )
+        else:
+            row_vg.prop(
+                props, "vertex_group", text="Vertex Group", icon="GROUP_VERTEX"
+            )
+
         sub_vg = row_vg.row(align=True)
         sub_vg.enabled = bool(props.vertex_group)
         sub_vg.use_property_decorate = False
@@ -306,7 +309,7 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
         )
 
         row_factor = layout.row(align=True)
-        row_factor.enabled = bool(props.vertex_group)
+        row_factor.enabled = is_mesh and bool(props.vertex_group)
         row_factor.prop(props, "vertex_group_factor", text="Factor")
 
         layout.separator()
@@ -326,9 +329,10 @@ class OBJECT_PT_incremental_decimate_panel(Panel):
 
         layout.separator()
 
-        # Execute button
+        # Execute button (disabled without a mesh; poll() also guards it)
         btn_col = layout.column()
         btn_col.scale_y = 1.4
+        btn_col.enabled = is_mesh
         btn_col.operator(
             "object.incremental_decimate_apply",
             text="Apply Decimate",
