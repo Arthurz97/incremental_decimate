@@ -142,7 +142,7 @@ class IncrementalDecimateProperties(PropertyGroup):
             "If enabled, adds all intermediate passes to the stack before applying"
             " them. If disabled, applies them one at a time."
         ),
-        default=True,
+        default=False,
     )
 
 
